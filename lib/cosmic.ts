@@ -111,16 +111,22 @@ export async function getSkillsByCategory(): Promise<Record<string, Skill[]>> {
   }
 }
 
-// Fetch work experience (sorted by start date, newest first)
+// Fetch work experience (sorted manually by start date, newest first)
 export async function getWorkExperience(): Promise<WorkExperience[]> {
   try {
     const response = await cosmic.objects
       .find({ type: 'work-experience' })
       .props(['id', 'title', 'slug', 'metadata'])
-      .sort('metadata.start_date', -1)
       .depth(1);
     
-    return response.objects as WorkExperience[];
+    const workExperience = response.objects as WorkExperience[];
+    
+    // Manual sorting by start_date (newest first)
+    return workExperience.sort((a, b) => {
+      const dateA = new Date(a.metadata?.start_date || '').getTime();
+      const dateB = new Date(b.metadata?.start_date || '').getTime();
+      return dateB - dateA; // Descending order (newest first)
+    });
   } catch (error) {
     if (hasStatus(error) && error.status === 404) {
       return [];
